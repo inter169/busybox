@@ -418,6 +418,7 @@ static void load_crontab(const char *fileName)
 {
 	struct parser_t *parser;
 	struct stat sbuf;
+	struct passwd *pas;
 	int maxLines;
 	char *tokens[6];
 #if ENABLE_FEATURE_CROND_CALL_SENDMAIL
@@ -427,7 +428,8 @@ static void load_crontab(const char *fileName)
 
 	delete_cronfile(fileName);
 
-	if (!getpwnam(fileName)) {
+	pas = getpwnam(fileName);
+	if (!pas) {
 		log7("ignoring file '%s' (no such user)", fileName);
 		return;
 	}
@@ -445,7 +447,8 @@ static void load_crontab(const char *fileName)
 	}
 
 	if ((ROOT_MODE() && sbuf.st_uid == DAEMON_UID) || 
-        (!ROOT_MODE() && sbuf.st_uid == geteuid())) {
+		(!ROOT_MODE() && sbuf.st_uid == geteuid() && 
+			sbuf.st_uid == pas -> pw_uid)) {
 		CronFile *file = xzalloc(sizeof(CronFile));
 		CronLine **pline;
 		int n;
